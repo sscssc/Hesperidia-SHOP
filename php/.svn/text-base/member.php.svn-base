@@ -1,0 +1,79 @@
+<?php
+session_start();
+
+$db = mysql_connect("localhost", "carlos_j", "oaxEi6sQ");
+mysql_select_db("carlos_j", $db);
+
+if (isset($_POST["clogin"]))
+	connect();
+
+register();
+
+function connect(){
+	if (isset($_POST["clogin"]) && $_POST["clogin"] != NULL){
+		$script_req = "SELECT count(*) FROM member WHERE login='".$_POST["clogin"]."' AND password='".md5($_POST["cpass"])."'";
+		$req = mysql_query($script_req);
+		$ret_sql = mysql_fetch_array($req);
+
+		if ($ret_sql[0] != 0){
+			print("Bienvenue ".$_POST["clogin"]);
+			$_SESSION["login"] = $_POST["clogin"];
+			header ("Location: ../index.php");
+		}else{
+			header ("Location: ../index.php?page=reg");
+		}
+	}else{
+		header ("Location: ../index.php?page=reg");
+	}
+}
+
+function disconnect(){
+	$_SESSION = array();
+	session_destroy();
+	header ("Location: ../index.php");
+}
+
+function isconnected(){
+	if (isset($_SESSION["login"]) && $_SESSION["login"] != NULL){
+		echo "<script>connected('".$_SESSION["login"]."');</script>";
+		if (member_lvl($_SESSION["login"]) != 0)
+			echo "<ul><li><a href='index.php?page=admin'>Ajouter une news<br/></a></li></ul>";
+		
+	}
+}
+
+
+function member_lvl($login){
+	$script_req = "SELECT * FROM member WHERE login='".$login."'";
+	$req = mysql_query($script_req);
+	$ret_sql = mysql_fetch_array($req);
+
+	return ($ret_sql[4]);
+}
+
+function register(){
+	if (isset($_POST["reg"])){
+		if ($_POST["fname"] != NULL && $_POST["fsubn"] != NULL){
+			if ($_POST["login"] != NULL){
+				$sql = "SELECT count(*) FROM member WHERE login='".$_POST["login"]."'";
+				$req = mysql_query($sql);
+				$ret = mysql_fetch_array($req);
+				if ($ret[0] == 0){
+					if ($_POST["mail"] != NULL){
+						$sql = "SELECT count(*) FROM member WHERE email='".$_POST["mail"]."'";
+						$req = mysql_query($sql);
+						$ret = mysql_fetch_array($req);
+						if ($ret[0] == 0){
+							if ($_POST["pass"] == $_POST["conf"] && $_POST != NULL){
+								$sql = "INSERT INTO member VALUES('', '".$_POST["login"]."', '".md5($_POST["pass"])."', '".$_POST["mail"]."','')";
+								mysql_query($sql);
+								$_SESSION['login'] = $_POST["login"];
+								header ("Location: ../index.php");
+							}else header ("Location: ../index.php?page=reg&a=pass");
+						}else header ("Location: ../index.php?page=reg&a=email");
+					}else header ("Location: ../index.php?page=reg&a=email");
+				}else header ("Location: ../index.php?page=reg&a=login");
+			}else header ("Location: ../index.php?page=reg&a=login");;
+		}else header ("Location: ../index.php?page=reg&a=name");
+	}
+}
